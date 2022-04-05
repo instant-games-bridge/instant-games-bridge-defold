@@ -1,0 +1,178 @@
+local instantgamesbridge = require("instantgamesbridge.instantgamesbridge")
+
+local function table_to_string(tbl, space_count)
+    if tbl == nil then
+        return "nil"
+    end
+    if space_count == nil then
+        space_count = 0
+    end
+    local result = ""
+    for key, value in pairs(tbl) do
+        local space = ""
+        if space_count > 0 then
+            space = string.rep(" ", space_count)
+        end
+        if type(value) == "table" then
+            result = result .. space .. key .. ":\n" .. table_to_string(value, space_count + 2)
+        else
+            result = result .. space .. key .. ": " .. tostring(value) .. "\n"
+        end
+    end
+    return result
+end
+
+local function to_str(data)
+    if type(data) == "table" then
+        return table_to_string(data)
+    elseif data == nil then
+        return "nil"
+    else
+        return tostring(data)
+    end
+end
+
+local function to_log(str)
+    gui.set_text(gui.get_node("label_log"), to_str(str))
+end
+
+local function on_init()
+    instantgamesbridge.init(function(success)
+        gui.set_text(gui.get_node("label_init"), "init: " .. to_str(success))
+    end)
+end
+
+local function on_get_language()
+    to_log("current language: " .. instantgamesbridge.get_language())
+end
+
+local function get_platform_id()
+    to_log(instantgamesbridge.get_platform_id())
+end
+
+local function get_payload()
+    to_log(to_str(instantgamesbridge.get_payload()))
+end
+
+local function ads_show_interstitial()
+    instantgamesbridge.ads_show_interstitial(nil, function(result)
+        to_log("show interstitial: " .. to_str(result))
+    end)
+end
+
+local function ads_show_rewarded()
+    instantgamesbridge.ads_show_rewarded(function(result)
+        to_log("show rewarded: " .. to_str(result))
+    end)
+end
+
+local function get_data()
+    instantgamesbridge.game_get_data("score", function(result)
+        to_log("get data (score): " .. to_str(result))
+    end)
+end
+
+local function set_data()
+    instantgamesbridge.game_set_data("score", 100, function(result)
+        to_log("set data (score = 100): " .. to_str(result))
+    end)
+end
+
+local function social()
+    to_log("Social:\n" .. table_to_string(instantgamesbridge.social()))
+end
+
+local function social_share()
+    instantgamesbridge.social_share(function(result)
+        to_log("Social share: " .. to_str(result))
+    end)
+end
+
+local function social_invite()
+    instantgamesbridge.social_invite_friends(function(result)
+        to_log("Social invite: " .. to_str(result))
+    end)
+end
+
+local function social_join()
+    instantgamesbridge.social_join_community(function(result)
+        to_log("Social join community: " .. to_str(result))
+    end)
+end
+
+local function call_native_yandex_environment()
+    local environment = instantgamesbridge.call_native_sdk("environment")
+    to_log("Yandex environment:\n" .. table_to_string(environment))
+end
+
+local function call_native_yandex_review()
+    to_log("Call native yandex feedback.canReview")
+    instantgamesbridge.call_native_sdk("feedback.canReview", nil, function(result)
+        to_log("Call native yandex feedback.canReview:\n" .. table_to_string(result))
+        if result.value then
+            instantgamesbridge.call_native_sdk("feedback.requestReview")
+        end
+    end)
+end
+
+local function call_native_yandex_set_leaderboard()
+    instantgamesbridge.call_native_sdk("lb=getLeaderboards", nil, function(leaderboards)
+        to_log("Yandex set leaderboard 120 score:\n" .. table_to_string(leaderboards))
+        instantgamesbridge.call_native_sdk("lb:setLeaderboardScore", { "leaderboard2021", 120 })
+    end)
+end
+
+local function call_native_yandex_get_leaderboard()
+    instantgamesbridge.call_native_sdk("lb=getLeaderboards", nil, function(leaderboards)
+        if leaderboards.error then
+            to_log("Yandex get leaderboard:\n" .. table_to_string(leaderboards))
+        else
+            local parameters = {
+                "leaderboard2021",
+                { quantityTop = 10, includeUser = true, quantityAround = 3 }
+            }
+            instantgamesbridge.call_native_sdk("lb:getLeaderboardEntries", parameters, function(result)
+                to_log("Yandex get leaderboard:\n" .. table_to_string(result))
+            end)
+        end
+    end)
+end
+
+local buttons = {
+    ["init/button"] = on_init,
+    ["get_language/button"] = on_get_language,
+    ["get_platform_id/button"] = get_platform_id,
+    ["get_payload/button"] = get_payload,
+    ["ads_show_interstitial/button"] = ads_show_interstitial,
+    ["ads_show_rewarded/button"] = ads_show_rewarded,
+    ["get_data/button"] = get_data,
+    ["set_data/button"] = set_data,
+    ["social/button"] = social,
+    ["social_share/button"] = social_share,
+    ["social_invite/button"] = social_invite,
+    ["social_join/button"] = social_join,
+    ["call_native_yandex_environment/button"] = call_native_yandex_environment,
+    ["call_native_yandex_review/button"] = call_native_yandex_review,
+    ["call_native_yandex_set_leaderboard/button"] = call_native_yandex_set_leaderboard,
+    ["call_native_yandex_get_leaderboard/button"] = call_native_yandex_get_leaderboard,
+}
+
+function init(self)
+    msg.post(".", "acquire_input_focus")
+    instantgamesbridge.callbacks.interstitial_state_changed = function(state)
+        pprint("interstitial state changed", state)
+    end
+    instantgamesbridge.callbacks.rewarded_state_changed = function(state)
+        pprint("rewarded state changed", state)
+    end
+end
+
+function on_input(self, action_id, action)
+    if action_id == hash("touch") and action.pressed then
+        for button, callback in pairs(buttons) do
+            if gui.pick_node(gui.get_node(button), action.x, action.y) then
+                callback()
+            end
+        end
+    end
+end

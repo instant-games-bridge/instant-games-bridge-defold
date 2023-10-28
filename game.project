@@ -27,3 +27,6 @@ cssfile = /builtins/manifests/web/dark_theme.css
 [input]
 game_binding = /builtins/input/all.input_bindingc
 
+[library]
+include_dirs = instant_games_bridge
+

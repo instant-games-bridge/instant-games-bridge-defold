@@ -1,0 +1,67 @@
+local bridge = require "instant_games_bridge.bridge"
+local util = require("instant_games_bridge.util")
+local json = require("instant_games_bridge.json")
+local druid = require("druid.druid")
+local input = require("druid.extended.input")
+
+local function jstodef_listener(self, message_id, message)
+	if message_id == "storage.get" then
+		self.input:set_text(tostring(message))
+	end
+end
+
+local function on_button_save_callback(self)
+	print("Platform ID: " .. bridge.platform.id())
+	print("Platform_INTERNAL: " .. bridge.storage.isAvailable("platform_internal"))
+
+	print("Saving " .. self.input:get_text())
+	bridge.storage.set("data", self.input:get_text())
+end
+
+local function on_button_load_callback(self)
+	print("Loading data")
+	bridge.storage.get("data")
+end
+
+local function on_button_photos_callback(self)
+	local photos = bridge.player.photos()
+	for i,l in pairs(photos) do
+		print(i)
+		print(l)
+	end
+end
+
+function init(self)
+	self.druid = druid.new(self)
+	druid.register("input", input)
+
+	if jstodef then
+		jstodef.add_listener(jstodef_listener)
+	end
+	
+	self.druid:new_button("button_save", on_button_save_callback)
+	self.druid:new_button("button_load", on_button_load_callback)
+	self.druid:new_button("button_photos", on_button_photos_callback)
+	
+	self.input = self.druid:new_input("input_box_usual", "input_text_usual")
+end
+
+function final(self)
+	self.druid:final()
+end
+
+-- "update" is used in progress bar, scroll, and timer basic components
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+-- "on_message" is used for specific Druid events, like language change or layout change
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message, sender)
+end
+
+-- "on_input" is used in almost all Druid components
+-- The return value from `druid:on_input` is required!
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end

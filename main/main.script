@@ -1,0 +1,10 @@
+local igb = require("instant_games_bridge.bridge")
+
+
+function init(self)
+	igb.init()
+end
+
+function final(self)
+	igb.final()
+end

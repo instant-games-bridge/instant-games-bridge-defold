@@ -1,20 +1,29 @@
 [bootstrap]
-main_collection = /example/main.collectionc
-
-[script]
-shared_state = 1
+main_collection = /main/main.collectionc
 
 [display]
 width = 960
 height = 640
 
-[android]
-input_method = HiddenInputField
+[script]
+shared_state = 1
+
+[webmonetization]
+payment_pointer = YOUR_PAYMENT_POINTER
 
 [project]
-title = Instant games bridge
-version = v1.2.1
-developer = Megalanthus
+title = Instant Games Bridge
+bundle_resources = /instant_games_bridge/resources/
+dependencies#0 = https://github.com/Insality/druid/archive/refs/tags/0.11.0.zip
+dependencies#1 = https://github.com/AGulev/jstodef/archive/refs/tags/2.0.0.zip
 
-[instant_games_bridge]
-vk_group_id = 199747461
+[html5]
+htmlfile = /instant_games_bridge/engine_template.html
+wasm_streaming = 1
+scale_mode = fit
+show_fullscreen_button = 0
+cssfile = /builtins/manifests/web/dark_theme.css
+
+[input]
+game_binding = /builtins/input/all.input_bindingc
+
